@@ -19,7 +19,7 @@ const columns: TableColumn<Role>[] = [
   { accessorKey: 'name', header: 'Rolle' },
   { accessorKey: 'permissions', header: 'Rechte' },
   { accessorKey: 'userCount', header: 'Benutzer' },
-  { id: 'actions', header: '' },
+  actionsColumn<Role>(),
 ]
 
 const open = ref(false)

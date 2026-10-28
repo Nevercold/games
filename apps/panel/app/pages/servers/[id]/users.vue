@@ -21,7 +21,7 @@ const { data: subusers, refresh } = await useFetch<Subuser[]>(`/api/servers/${id
 const columns: TableColumn<Subuser>[] = [
   { accessorKey: 'username', header: 'Benutzer' },
   { accessorKey: 'permissions', header: 'Rechte' },
-  { id: 'actions', header: '' },
+  actionsColumn<Subuser>(),
 ]
 
 const grantable = computed(() => server.value?.permissions ?? [])

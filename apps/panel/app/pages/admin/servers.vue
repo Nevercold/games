@@ -56,7 +56,7 @@ const columns: TableColumn<ServerRow>[] = [
   { id: 'address', header: 'Adresse' },
   { id: 'owner', header: 'Besitzer' },
   { id: 'resources', header: 'Ressourcen' },
-  { id: 'actions', header: '' },
+  actionsColumn<ServerRow>(),
 ]
 
 // --- create ------------------------------------------------------------------
@@ -206,7 +206,10 @@ async function confirmDelete() {
           <NuxtLink :to="`/admin/nodes/${row.original.node.id}`" class="hover:underline">{{ row.original.node.name }}</NuxtLink>
         </template>
         <template #address-cell="{ row }">
-          <span v-for="a in row.original.allocations" :key="a.id" class="block font-mono text-xs">{{ row.original.node.publicHost }}:{{ a.port }}</span>
+          <div>
+            <span v-for="a in row.original.allocations" :key="a.id" class="block font-mono text-xs">{{ row.original.node.publicHost }}:{{ a.port }}</span>
+            <span v-if="!row.original.allocations.length" class="text-dimmed">–</span>
+          </div>
         </template>
         <template #owner-cell="{ row }">{{ row.original.owner.username }}</template>
         <template #resources-cell="{ row }">

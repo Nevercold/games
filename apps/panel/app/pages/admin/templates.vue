@@ -26,7 +26,7 @@ const columns: TableColumn<TemplateRow>[] = [
   { accessorKey: 'images', header: 'Images' },
   { accessorKey: 'variables', header: 'Variablen' },
   { accessorKey: 'serverCount', header: 'Server' },
-  { id: 'actions', header: '' },
+  actionsColumn<TemplateRow>(),
 ]
 
 // --- import ---
@@ -104,9 +104,9 @@ async function remove(t: TemplateRow) {
           <span v-else class="text-muted">–</span>
         </template>
         <template #images-cell="{ row }">
-          <span v-for="(img, label) in row.original.images" :key="label" class="block text-xs">
-            {{ label }}
-          </span>
+          <div>
+            <span v-for="(img, label) in row.original.images" :key="label" class="block text-xs">{{ label }}</span>
+          </div>
         </template>
         <template #variables-cell="{ row }">{{ row.original.variables.length }}</template>
         <template #actions-cell="{ row }">

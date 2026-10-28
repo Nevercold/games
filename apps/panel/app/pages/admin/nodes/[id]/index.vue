@@ -19,7 +19,7 @@ const allocColumns: TableColumn<Allocation>[] = [
   { accessorKey: 'port', header: 'Port' },
   { accessorKey: 'alias', header: 'Alias' },
   { accessorKey: 'serverId', header: 'Server' },
-  { id: 'actions', header: '' },
+  actionsColumn<Allocation>(),
 ]
 
 const serverNames = computed(() => new Map(node.value?.servers.map((s) => [s.id, s.name]) ?? []))

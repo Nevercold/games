@@ -34,7 +34,7 @@ const containerColumns: TableColumn<Container>[] = [
   { accessorKey: 'state', header: 'Status' },
   { accessorKey: 'image', header: 'Image' },
   { accessorKey: 'ports', header: 'Ports' },
-  { id: 'actions', header: '' },
+  actionsColumn<Container>(),
 ]
 const imageColumns: TableColumn<Overview['images'][number]>[] = [
   { accessorKey: 'tags', header: 'Tags' },
@@ -129,7 +129,10 @@ const shortId = (s: string) => s.replace(/^sha256:/, '').slice(0, 12)
         </template>
         <template #image-cell="{ row }"><span class="font-mono text-xs">{{ row.original.image }}</span></template>
         <template #ports-cell="{ row }">
-          <span v-for="p in row.original.ports" :key="p" class="block font-mono text-xs">{{ p }}</span>
+          <div>
+            <span v-for="p in row.original.ports" :key="p" class="block font-mono text-xs">{{ p }}</span>
+            <span v-if="!row.original.ports.length" class="text-dimmed">–</span>
+          </div>
         </template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end gap-1">
@@ -141,7 +144,9 @@ const shortId = (s: string) => s.replace(/^sha256:/, '').slice(0, 12)
 
       <UTable v-else-if="tab === 'images'" :data="data?.images.filter((i) => match(...i.tags, i.id))" :columns="imageColumns" :loading="status === 'pending'">
         <template #tags-cell="{ row }">
-          <span v-for="t in row.original.tags.length ? row.original.tags : ['<none>']" :key="t" class="block font-mono text-xs">{{ t }}</span>
+          <div>
+            <span v-for="t in row.original.tags.length ? row.original.tags : ['<none>']" :key="t" class="block font-mono text-xs">{{ t }}</span>
+          </div>
         </template>
         <template #id-cell="{ row }"><span class="font-mono text-xs">{{ shortId(row.original.id) }}</span></template>
         <template #size-cell="{ row }">{{ formatBytes(row.original.size) }}</template>
