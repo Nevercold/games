@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+package panel.v1;
+
+option go_package = "panel/daemon/internal/pb/panel/v1;panelv1";
+
+// Messages carried inside tunnel streams.
+//
+// RPC:     panel opens a stream with kind "rpc:<name>" and the request as
+//          header. The daemon answers with one StreamData{eof: true} holding
+//          the response, or a TunnelError on the same stream id.
+// Console: kind "console", header ConsoleOpen. Daemon → panel data is raw
+//          terminal output; panel → daemon data is a command line (stdin).
+// Stats:   kind "stats", header StatsOpen. Daemon sends StatsSample frames.
+
+// ---------------------------------------------------------------------------
+// Server specification (sent with every start/install, daemon keeps no DB)
+// ---------------------------------------------------------------------------
+
+message ServerSpec {
+  string id = 1;
+  string image = 2;
+  // Startup command with {{VAR}} placeholders, passed as STARTUP env like Wings.
+  string startup = 3;
+  map<string, string> env = 4;
+  uint64 memory_mb = 5;
+  uint32 cpu_percent = 6;
+  uint64 disk_mb = 7;
+  repeated PortBinding ports = 8;
+  StopConfig stop = 9;
+  // Output substrings that mark the server as running.
+  repeated string done = 10;
+  repeated ConfigFile config_files = 11;
+}
+
+message PortBinding {
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message StopConfig {
+  oneof kind {
+    // Written to stdin, e.g. "stop".
+    string command = 1;
+    // Signal name, e.g. "SIGINT".
+    string signal = 2;
+  }
+}
+
+// Config file patch with values already resolved by the panel.
+message ConfigFile {
+  string path = 1;
+  // properties | json | yaml | text
+  string parser = 2;
+  map<string, string> set = 3;
+}
+
+message InstallSpec {
+  string image = 1;
+  string entrypoint = 2;
+  string script = 3;
+}
+
+enum ServerState {
+  SERVER_STATE_UNSPECIFIED = 0;
+  SERVER_STATE_OFFLINE = 1;
+  SERVER_STATE_STARTING = 2;
+  SERVER_STATE_RUNNING = 3;
+  SERVER_STATE_STOPPING = 4;
+  SERVER_STATE_INSTALLING = 5;
+}
+
+enum PowerAction {
+  POWER_ACTION_UNSPECIFIED = 0;
+  POWER_ACTION_START = 1;
+  POWER_ACTION_STOP = 2;
+  POWER_ACTION_RESTART = 3;
+  POWER_ACTION_KILL = 4;
+}
+
+// ---------------------------------------------------------------------------
+// RPCs
+// ---------------------------------------------------------------------------
+
+// rpc:power – accepted asynchronously, progress arrives as events.
+message PowerRequest {
+  PowerAction action = 1;
+  // Required for start and restart.
+  ServerSpec spec = 2;
+}
+
+message PowerResponse {}
+
+// rpc:install – accepted asynchronously, InstallFinished event follows.
+message InstallRequest {
+  ServerSpec spec = 1;
+  InstallSpec install = 2;
+}
+
+message InstallResponse {}
+
+// rpc:delete – removes the container and optionally the server files.
+message DeleteServerRequest {
+  string server_id = 1;
+  bool delete_files = 2;
+}
+
+message DeleteServerResponse {}
+
+// rpc:states – current state of the given servers (all managed if empty).
+message ServerStatesRequest {
+  repeated string server_ids = 1;
+}
+
+message ServerStatesResponse {
+  map<string, ServerState> states = 1;
+}
+
+// rpc:docker.overview
+message DockerOverviewRequest {}
+
+message DockerOverviewResponse {
+  repeated DockerContainer containers = 1;
+  repeated DockerImage images = 2;
+  repeated DockerVolume volumes = 3;
+  repeated DockerNetwork networks = 4;
+}
+
+message DockerContainer {
+  string id = 1;
+  string name = 2;
+  string image = 3;
+  string state = 4;
+  string status = 5;
+  int64 created_unix = 6;
+  repeated string ports = 7;
+  map<string, string> labels = 8;
+  // Owned by this panel (label panel.managed=true).
+  bool managed = 9;
+}
+
+message DockerImage {
+  string id = 1;
+  repeated string tags = 2;
+  int64 size_bytes = 3;
+  int64 created_unix = 4;
+  int64 containers = 5;
+}
+
+message DockerVolume {
+  string name = 1;
+  string driver = 2;
+  string mountpoint = 3;
+  string created_at = 4;
+}
+
+message DockerNetwork {
+  string id = 1;
+  string name = 2;
+  string driver = 3;
+  string scope = 4;
+  uint32 containers = 5;
+}
+
+// rpc:docker.logs
+message ContainerLogsRequest {
+  string container_id = 1;
+  uint32 tail = 2;
+}
+
+message ContainerLogsResponse {
+  string logs = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Streams
+// ---------------------------------------------------------------------------
+
+message ConsoleOpen {
+  string server_id = 1;
+}
+
+message StatsOpen {
+  string server_id = 1;
+}
+
+message StatsSample {
+  double cpu_percent = 1;
+  uint64 memory_bytes = 2;
+  uint64 memory_limit_bytes = 3;
+  uint64 net_rx_bytes = 4;
+  uint64 net_tx_bytes = 5;
+  uint64 disk_bytes = 6;
+  int64 uptime_ms = 7;
+  ServerState state = 8;
+}
+
+// ---------------------------------------------------------------------------
+// Events (daemon → panel, Envelope.event)
+// ---------------------------------------------------------------------------
+
+message Event {
+  oneof kind {
+    ServerStateChanged state_changed = 1;
+    InstallFinished install_finished = 2;
+  }
+}
+
+message ServerStateChanged {
+  string server_id = 1;
+  ServerState state = 2;
+  // Set when the server stopped without being asked to (crash).
+  bool crashed = 3;
+}
+
+message InstallFinished {
+  string server_id = 1;
+  bool success = 2;
+  string log_tail = 3;
+}

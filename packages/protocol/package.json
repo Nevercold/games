@@ -1,0 +1,21 @@
+{
+  "name": "@panel/protocol",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "gen": "buf generate",
+    "lint": "buf lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.16.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.16.0",
+    "typescript": "^6.0.3"
+  }
+}

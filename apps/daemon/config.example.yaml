@@ -1,0 +1,8 @@
+# Copy to config.yaml. The panel shows a ready-made config when you add a node.
+panel_url: http://localhost:3100
+token: <nodeId>.<secret>
+data_dir: ./data
+# Plain ws:// is only accepted for loopback hosts unless this is true.
+allow_insecure: false
+docker_socket: /var/run/docker.sock
+log_level: info

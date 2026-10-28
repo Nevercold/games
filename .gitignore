@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.output/
+.nuxt/
+.nitro/
+.cache/
+.data/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+!.idea/.gitignore
+
+# Go
+apps/daemon/bin/
+apps/daemon/config.yaml
+apps/daemon/data/
+
+# Generated protocol code is committed so a fresh clone builds without buf.

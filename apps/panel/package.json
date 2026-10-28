@@ -1,0 +1,42 @@
+{
+  "name": "@panel/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.16.0",
+    "@nuxt/ui": "^4.12.0",
+    "@panel/protocol": "workspace:*",
+    "@panel/shared": "workspace:*",
+    "@vueuse/core": "^15.0.0",
+    "@vueuse/integrations": "^15.0.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "drizzle-orm": "^0.45.4",
+    "hookable": "^6.1.2",
+    "nuxt": "^4.6.3",
+    "nuxt-auth-utils": "^0.5.33",
+    "postgres": "^3.4.9",
+    "sortablejs": "^1.15.7",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.147",
+    "@types/node": "^24.19.2",
+    "@types/sortablejs": "^1.15.9",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.3.13"
+  }
+}

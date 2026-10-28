@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/*
+ * Design tokens live here and only here.
+ * Branding settings (PLAN.md "Theme-System", Stufe 1) override these
+ * variables at runtime via an inline <style> in the document head.
+ */
+:root {
+  --ui-radius: var(--radius-md);
+}

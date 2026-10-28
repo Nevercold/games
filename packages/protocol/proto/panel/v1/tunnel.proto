@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package panel.v1;
+
+import "panel/v1/daemon.proto";
+
+option go_package = "panel/daemon/internal/pb/panel/v1;panelv1";
+
+// Tunnel protocol v0.
+//
+// The daemon opens one WebSocket connection to the panel and keeps it alive.
+// Every WebSocket binary frame carries exactly one Envelope. Streams are
+// multiplexed over the connection via `stream_id`; stream 0 is the control
+// stream (handshake, heartbeat). Stream ids opened by the panel are odd, ids
+// opened by the daemon are even, so both sides can open streams without
+// coordination.
+
+message Envelope {
+  uint32 stream_id = 1;
+  oneof payload {
+    Hello hello = 10;
+    HelloAck hello_ack = 11;
+    Ping ping = 12;
+    Pong pong = 13;
+    StreamOpen stream_open = 20;
+    StreamData stream_data = 21;
+    StreamClose stream_close = 22;
+    TunnelError error = 30;
+    Event event = 40;
+  }
+}
+
+// Sent by the daemon as the first frame on stream 0.
+message Hello {
+  uint32 protocol_version = 1;
+  string daemon_version = 2;
+  string hostname = 3;
+  SystemInfo system = 4;
+}
+
+message SystemInfo {
+  string os = 1;
+  string arch = 2;
+  string kernel = 3;
+  uint64 memory_total_bytes = 4;
+  uint32 cpu_count = 5;
+  string docker_version = 6;
+}
+
+// Sent by the panel in response to Hello.
+message HelloAck {
+  uint32 protocol_version = 1;
+  string panel_version = 2;
+  string node_id = 3;
+  int64 server_time_unix_ms = 4;
+  // Heartbeat interval the daemon must honour.
+  uint32 heartbeat_interval_s = 5;
+}
+
+message Ping {
+  int64 sent_unix_ms = 1;
+}
+
+message Pong {
+  int64 sent_unix_ms = 1;
+}
+
+// Opens a new multiplexed stream. `kind` tells the receiver how to interpret
+// the data frames that follow (e.g. "console", "file.read", "rpc").
+message StreamOpen {
+  string kind = 1;
+  bytes header = 2;
+}
+
+message StreamData {
+  bytes data = 1;
+  bool eof = 2;
+}
+
+message StreamClose {
+  uint32 code = 1;
+  string reason = 2;
+}
+
+message TunnelError {
+  uint32 code = 1;
+  string message = 2;
+}

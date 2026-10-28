@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs protoc-gen-go pinned in apps/daemon/go.mod (go tool), so no global
+# install is needed. buf pipes the CodeGeneratorRequest through stdin/stdout.
+cd "$(dirname "$0")/../../../apps/daemon" || exit 1
+exec go tool protoc-gen-go "$@"

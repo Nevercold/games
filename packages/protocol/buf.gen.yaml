@@ -1,0 +1,13 @@
+version: v2
+clean: true
+plugins:
+  # TypeScript (panel) – protobuf-es
+  - local: node_modules/.bin/protoc-gen-es
+    out: gen/ts
+    opt:
+      - target=ts
+  # Go (daemon) – protoc-gen-go pinned as a go tool in apps/daemon/go.mod
+  - local: scripts/protoc-gen-go
+    out: ../../apps/daemon/internal/pb
+    opt:
+      - paths=source_relative

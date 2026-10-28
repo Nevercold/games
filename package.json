@@ -1,0 +1,23 @@
+{
+  "name": "panel-monorepo",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @panel/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "proto": "pnpm --filter @panel/protocol gen",
+    "db:generate": "pnpm --filter @panel/web db:generate",
+    "db:migrate": "pnpm --filter @panel/web db:migrate",
+    "db:studio": "pnpm --filter @panel/web db:studio",
+    "daemon": "cd apps/daemon && go run ./cmd/daemon",
+    "infra": "docker compose -f docker/docker-compose.yml up -d"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
