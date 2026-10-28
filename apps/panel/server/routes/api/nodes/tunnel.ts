@@ -84,6 +84,7 @@ export default defineWebSocketHandler({
             systemInfo: hello.system
               ? {
                   hostname: hello.hostname,
+                  sftpPort: hello.sftpPort,
                   os: hello.system.os,
                   arch: hello.system.arch,
                   kernel: hello.system.kernel,
@@ -91,7 +92,7 @@ export default defineWebSocketHandler({
                   cpuCount: hello.system.cpuCount,
                   dockerVersion: hello.system.dockerVersion,
                 }
-              : { hostname: hello.hostname },
+              : { hostname: hello.hostname, sftpPort: hello.sftpPort },
           })
           .where(eq(schema.nodes.id, nodeId))
 
@@ -116,6 +117,10 @@ export default defineWebSocketHandler({
         await handleDaemonEvent(nodeId, payload.value).catch((err) =>
           console.error(`[tunnel] event from node ${nodeId} failed:`, err),
         )
+        break
+      case 'streamOpen':
+        // Daemon-opened stream (e.g. sftp.auth); handled asynchronously.
+        handleDaemonStreamOpen(conn, envelope)
         break
       case 'streamData':
       case 'streamClose':

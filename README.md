@@ -46,6 +46,16 @@ pnpm daemon       # entspricht: cd apps/daemon && go run ./cmd/daemon
 ```
 
 Die Node erscheint danach im Panel als online, inklusive Systeminfos.
+Der Daemon startet außerdem einen SFTP-Server (Standard: Port 2022). Anmeldung mit
+`<Panel-Benutzername>.<erste 8 Zeichen der Server-ID>` und dem Panel-Passwort; das
+Panel prüft Passwort und Datei-Rechte über den Tunnel.
+
+### Tests
+
+```sh
+pnpm --filter @panel/shared test                 # Egg-Konverter, Variablen
+cd apps/daemon && go test -race ./internal/...   # Dateien, Archive, SFTP-Rechte
+```
 
 ### Datenbank
 

@@ -6,3 +6,11 @@ data_dir: ./data
 allow_insecure: false
 docker_socket: /var/run/docker.sock
 log_level: info
+# Game containers run as this uid:gid (server files are chowned on Linux).
+container_user: "988:988"
+stop_timeout_s: 120
+# Built-in SFTP server. Logins are checked by the panel through the tunnel:
+# user "<panel username>.<first 8 chars of server id>", panel password.
+sftp:
+  enabled: true
+  bind: 0.0.0.0:2022

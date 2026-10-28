@@ -40,6 +40,7 @@ type Options struct {
 	Token         string
 	DaemonVersion string
 	DockerSocket  string
+	SftpPort      uint32
 	Logger        *slog.Logger
 	// Handlers serve panel-opened streams, keyed by StreamOpen.kind.
 	Handlers map[string]Handler
@@ -131,9 +132,11 @@ func (c *Client) session(ctx context.Context) error {
 		log:      c.log,
 		handlers: c.opts.Handlers,
 		streams:  map[uint32]*Stream{},
+		out:      newOutgoing(),
 		ctx:      sessCtx,
 	}
 	defer s.closeAllStreams()
+	defer s.out.failAll(ErrNotConnected)
 
 	// Handshake: Hello → HelloAck.
 	info := sysinfo.Collect(ctx, c.opts.DockerSocket)
@@ -141,6 +144,7 @@ func (c *Client) session(ctx context.Context) error {
 		ProtocolVersion: ProtocolVersion,
 		DaemonVersion:   c.opts.DaemonVersion,
 		Hostname:        info.Hostname,
+		SftpPort:        c.opts.SftpPort,
 		System: &panelv1.SystemInfo{
 			Os:               info.OS,
 			Arch:             info.Arch,
@@ -209,6 +213,7 @@ type session struct {
 
 	streamsMu sync.Mutex
 	streams   map[uint32]*Stream
+	out       *outgoing
 }
 
 func (s *session) send(ctx context.Context, env *panelv1.Envelope) error {
@@ -266,6 +271,11 @@ func (s *session) readLoop(ctx context.Context, idleTimeout time.Duration) error
 				return nil
 			}
 			return fmt.Errorf("read: %w", err)
+		}
+		// Even ids are streams the daemon opened (replies to Call).
+		if env.StreamId != 0 && env.StreamId%2 == 0 {
+			s.handleOutgoingFrame(env)
+			continue
 		}
 		switch p := env.Payload.(type) {
 		case *panelv1.Envelope_Pong:

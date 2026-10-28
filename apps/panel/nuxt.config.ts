@@ -17,6 +17,8 @@ export default defineNuxtConfig({
     appKey: '',
     /** Honour X-Forwarded-For (only behind a trusted reverse proxy). */
     trustProxy: false,
+    /** Max single file upload through the panel (bytes). SFTP has no such limit. */
+    maxUploadBytes: 1024 * 1024 * 1024,
     migrationsDir: 'server/db/migrations',
     pluginsDir: '../../data/plugins',
     tunnel: {

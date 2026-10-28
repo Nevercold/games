@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package panel.v1;
+
+option go_package = "panel/daemon/internal/pb/panel/v1;panelv1";
+
+// File operations inside a server directory. All paths are relative to the
+// server root; the daemon resolves them through os.Root so they can never
+// escape it (no "..", no symlinks pointing outside).
+
+message FileEntry {
+  string name = 1;
+  uint64 size = 2;
+  uint32 mode = 3;
+  int64 modified_unix = 4;
+  bool is_dir = 5;
+  bool is_symlink = 6;
+}
+
+// rpc:files.list
+message FileListRequest {
+  string server_id = 1;
+  string path = 2;
+}
+
+message FileListResponse {
+  repeated FileEntry entries = 1;
+}
+
+// rpc:files.read – small files for the editor.
+message FileReadRequest {
+  string server_id = 1;
+  string path = 2;
+  uint64 max_bytes = 3;
+}
+
+message FileReadResponse {
+  bytes content = 1;
+  uint64 size = 2;
+  bool truncated = 3;
+}
+
+// rpc:files.write
+message FileWriteRequest {
+  string server_id = 1;
+  string path = 2;
+  bytes content = 3;
+  // 0 = unlimited. Enforced against current disk usage.
+  uint64 disk_limit_bytes = 4;
+}
+
+// rpc:files.mkdir
+message FileMkdirRequest {
+  string server_id = 1;
+  string path = 2;
+}
+
+// rpc:files.rename
+message FileRenameRequest {
+  string server_id = 1;
+  string from = 2;
+  string to = 3;
+}
+
+// rpc:files.delete
+message FileDeleteRequest {
+  string server_id = 1;
+  repeated string paths = 2;
+}
+
+// rpc:files.compress
+message FileCompressRequest {
+  string server_id = 1;
+  // Directory the paths are relative to; the archive is created there.
+  string root = 2;
+  repeated string paths = 3;
+  uint64 disk_limit_bytes = 4;
+}
+
+message FileCompressResponse {
+  string archive = 1;
+}
+
+// rpc:files.decompress
+message FileDecompressRequest {
+  string server_id = 1;
+  string root = 2;
+  string archive = 3;
+  uint64 disk_limit_bytes = 4;
+}
+
+// Empty response for file operations without a result.
+message FileOpResponse {}
+
+// Streams "file.download" (daemon → panel data) and "file.upload"
+// (panel → daemon data, eof marks the end; daemon replies with FileOpResponse).
+message FileTransferOpen {
+  string server_id = 1;
+  string path = 2;
+  // Upload only: expected size, checked against the disk limit up front.
+  uint64 size = 3;
+  uint64 disk_limit_bytes = 4;
+}
+
+// ---------------------------------------------------------------------------
+// SFTP (daemon → panel, stream "rpc:sftp.auth" opened by the daemon)
+// ---------------------------------------------------------------------------
+
+message SftpAuthRequest {
+  // "<username>.<first 8 chars of the server id>"
+  string username = 1;
+  string password = 2;
+  string remote_ip = 3;
+}
+
+message SftpAuthResponse {
+  string server_id = 1;
+  // Server permissions of the user (file.* subset is relevant).
+  repeated string permissions = 2;
+  uint64 disk_limit_bytes = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Docker actions (admin)
+// ---------------------------------------------------------------------------
+
+// rpc:docker.container
+message ContainerActionRequest {
+  string container_id = 1;
+  // start | stop | restart | kill | remove
+  string action = 2;
+}
+
+// rpc:docker.image.pull – blocks until the pull finished.
+message ImagePullRequest {
+  string ref = 1;
+}
+
+// rpc:docker.image.remove
+message ImageRemoveRequest {
+  string id = 1;
+  bool force = 2;
+}
+
+// Stream "docker.exec": panel data frames start with a type byte:
+// 0x00 = stdin bytes, 0x01 = resize as JSON {"cols":n,"rows":n}.
+// Daemon data frames are raw terminal output.
+message ExecOpen {
+  string container_id = 1;
+  repeated string cmd = 2;
+  uint32 cols = 3;
+  uint32 rows = 4;
+}
+
+// rpc:docker.volume.list / rpc:docker.volume.read – read-only volume browser.
+message VolumeListRequest {
+  string volume = 1;
+  string path = 2;
+}
+
+message VolumeReadRequest {
+  string volume = 1;
+  string path = 2;
+  uint64 max_bytes = 3;
+}

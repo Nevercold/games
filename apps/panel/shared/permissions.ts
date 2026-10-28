@@ -32,6 +32,7 @@ export const ADMIN_PERMISSION_GROUPS = [
       { id: 'admin.nodes.read', label: 'Nodes sehen' },
       { id: 'admin.nodes.write', label: 'Nodes und Allocations verwalten', description: 'Inklusive Token-Erneuerung' },
       { id: 'admin.docker.read', label: 'Docker-Bereich ansehen', description: 'Container, Images, Volumes, Netzwerke und Logs' },
+      { id: 'admin.docker.write', label: 'Docker steuern', description: 'Container starten/stoppen/entfernen, Terminal, Images pullen und löschen. Entspricht Root-Zugriff auf die Node.' },
     ],
   },
   {
@@ -72,6 +73,19 @@ export const SERVER_PERMISSION_GROUPS = [
       { id: 'control.stop', label: 'Stoppen' },
       { id: 'control.restart', label: 'Neustarten' },
       { id: 'control.kill', label: 'Hart beenden' },
+    ],
+  },
+  {
+    id: 'file',
+    label: 'Dateien',
+    permissions: [
+      { id: 'file.read', label: 'Verzeichnisse auflisten' },
+      { id: 'file.read-content', label: 'Dateien ansehen und herunterladen' },
+      { id: 'file.create', label: 'Dateien hochladen und anlegen' },
+      { id: 'file.update', label: 'Dateien bearbeiten und umbenennen' },
+      { id: 'file.delete', label: 'Dateien löschen' },
+      { id: 'file.archive', label: 'Archive erstellen und entpacken' },
+      { id: 'file.sftp', label: 'SFTP-Zugang', description: 'Gilt mit den obigen Datei-Rechten' },
     ],
   },
   {

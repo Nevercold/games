@@ -230,8 +230,10 @@ type Hello struct {
 	DaemonVersion   string                 `protobuf:"bytes,2,opt,name=daemon_version,json=daemonVersion,proto3" json:"daemon_version,omitempty"`
 	Hostname        string                 `protobuf:"bytes,3,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	System          *SystemInfo            `protobuf:"bytes,4,opt,name=system,proto3" json:"system,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 0 when the built-in SFTP server is disabled.
+	SftpPort      uint32 `protobuf:"varint,5,opt,name=sftp_port,json=sftpPort,proto3" json:"sftp_port,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Hello) Reset() {
@@ -290,6 +292,13 @@ func (x *Hello) GetSystem() *SystemInfo {
 		return x.System
 	}
 	return nil
+}
+
+func (x *Hello) GetSftpPort() uint32 {
+	if x != nil {
+		return x.SftpPort
+	}
+	return 0
 }
 
 type SystemInfo struct {
@@ -771,12 +780,13 @@ const file_panel_v1_tunnel_proto_rawDesc = "" +
 	"\fstream_close\x18\x16 \x01(\v2\x15.panel.v1.StreamCloseH\x00R\vstreamClose\x12-\n" +
 	"\x05error\x18\x1e \x01(\v2\x15.panel.v1.TunnelErrorH\x00R\x05error\x12'\n" +
 	"\x05event\x18( \x01(\v2\x0f.panel.v1.EventH\x00R\x05eventB\t\n" +
-	"\apayload\"\xa3\x01\n" +
+	"\apayload\"\xc0\x01\n" +
 	"\x05Hello\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12%\n" +
 	"\x0edaemon_version\x18\x02 \x01(\tR\rdaemonVersion\x12\x1a\n" +
 	"\bhostname\x18\x03 \x01(\tR\bhostname\x12,\n" +
-	"\x06system\x18\x04 \x01(\v2\x14.panel.v1.SystemInfoR\x06system\"\xba\x01\n" +
+	"\x06system\x18\x04 \x01(\v2\x14.panel.v1.SystemInfoR\x06system\x12\x1b\n" +
+	"\tsftp_port\x18\x05 \x01(\rR\bsftpPort\"\xba\x01\n" +
 	"\n" +
 	"SystemInfo\x12\x0e\n" +
 	"\x02os\x18\x01 \x01(\tR\x02os\x12\x12\n" +

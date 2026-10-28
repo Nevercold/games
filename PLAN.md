@@ -124,6 +124,18 @@ Katalog in `apps/panel/shared/permissions.ts`, Prüfung immer serverseitig, UI b
 - Subuser können nur Rechte vergeben, die sie selbst haben
 - Plugins registrieren eigene Rechte unter `plugin.<id>.*`
 
+## Git-Integration
+
+Server-Dateien (Plugins, Configs, Maps, Datapacks) direkt aus Git verwalten, ähnlich wie Git-Quellen bei Stacks.
+
+- Pro Server ein oder mehrere Git-Quellen: Repo-URL, Branch/Tag, Zielverzeichnis im Server (z. B. `plugins/` oder `/`), optional Unterordner im Repo
+- Auth: Deploy-Key (vom Panel erzeugtes ed25519-Paar, Public Key zum Kopieren) oder HTTPS-Token, verschlüsselt in der DB
+- Aktionen: Clone, Pull, Status/Diff anzeigen, Commit-Log; Pull vor jedem Start (optional), Pull per Webhook (GitHub/GitLab/Gitea, signiert) und per Schedule
+- Konflikte: Strategie wählbar (überschreiben vs. abbrechen), lokale Änderungen werden vorher angezeigt
+- Daemon führt Git in einem kurzlebigen Container (alpine/git) mit gemountetem Serververzeichnis aus, nicht auf dem Host, damit Hooks und Credentials isoliert bleiben
+- Neues Server-Recht `git.read` / `git.write`, Audit-Log für Pulls
+- Optional später: Änderungen aus dem File-Manager zurück committen (Push)
+
 ## Server-Gruppen und Sortierung
 
 - Gruppen gehören dem Nutzer (`server_groups`: Name, Farbe, Reihenfolge), jeder organisiert seine eigene Ansicht
@@ -258,7 +270,7 @@ Das Default-Theme wird selbst als Theme-Paket ausgeliefert, plus ein zweites Fir
 1. **Fundament**: Monorepo, Nuxt-Skelett mit Nuxt UI-Layout, Postgres + Drizzle, Auth, Users, Nodes, Allocations, Server-CRUD (Admin). Hook-System + Plugin-Loader-Skelett (server-seitig). Design-Tokens als Fundament, Branding-Einstellungen (Stufe 1), Hell/Dunkel. Daemon: Skelett, Konfig, Tunnel-Verbindung zum Panel mit Reconnect, Heartbeat, Protokoll v0 (Protobuf).
 2. **Server laufen**: Daemon Container-Lifecycle + Konsole + Stats. Panel: Server-Seite mit Live-Konsole, Power-Buttons, Ressourcen-Anzeige. Template-Format v1 + Egg-Konverter + Install-Flow. UI-Extension-Points (Slots) definieren. Docker-Bereich read-only: Container, Images, Volumes, Netzwerke, Logs. Berechtigungssystem (Admin-Rollen + Subuser), Server-Gruppen mit Farben und Sortierung.
 3. **Dateien**: File-Manager (Browser, Editor mit Syntax-Highlighting, Upload, Archive), SFTP im Daemon. Docker-Aktionen: Container-Steuerung, Exec-Terminal, Image-Pull, Volume-Browser.
-4. **Betrieb**: Backup-Ziele (lokal, S3, SFTP) + Backups mit Retention, Schedules/Tasks, Server-Datenbanken, Startup-Variablen-UI. Stacks (Compose) inkl. Git-Quelle, Registry-Credentials. Deklarative Plugin-UI (Settings, Widgets). Nutzer-Präferenzen (Theme Stufe 2).
+4. **Betrieb**: Backup-Ziele (lokal, S3, SFTP) + Backups mit Retention, Schedules/Tasks, Git-Integration für Server-Dateien (Clone/Pull, Deploy-Keys, Webhooks), Server-Datenbanken, Startup-Variablen-UI. Stacks (Compose) inkl. Git-Quelle, Registry-Credentials. Deklarative Plugin-UI (Settings, Widgets). Nutzer-Präferenzen (Theme Stufe 2).
 5. **Mehrbenutzer**: API-Keys, 2FA, OpenID Connect, Audit-Log, Activity-Feed. Plugin-Install über Admin-UI, Plugin-SDK, erstes First-Party-Plugin: `pelican-import`. Theme-Pakete (Stufe 3) mit zweitem First-Party-Theme.
 6. **Reife**: Server-Transfer zwischen Nodes, Mounts, Node-Auto-Deploy, Direktmodus für Nodes, SFTP durch Tunnel, Prebuilt-Plugin-Komponenten, Layout-Overrides (Theme Stufe 4), App-Templates, Template-Format v2 mit Sidecars, Plugin-Registry, Docs, Release-Pipeline.
 

@@ -5,8 +5,21 @@ const socket = inject(SERVER_SOCKET)!
 const toast = useToast()
 
 const can = (p: string) => server.value?.permissions.includes(p) ?? false
-if (!can('startup.read') && !can('settings.reinstall')) {
+if (!can('startup.read') && !can('settings.reinstall') && !server.value?.sftp) {
   throw createError({ statusCode: 404, statusMessage: 'Seite nicht gefunden', fatal: true })
+}
+
+const sftpRows = computed(() => {
+  const s = server.value?.sftp
+  if (!s) return []
+  return [
+    { label: 'Adresse', value: `sftp://${s.host}:${s.port}` },
+    { label: 'Benutzername', value: s.username },
+  ]
+})
+async function copy(text: string) {
+  await navigator.clipboard.writeText(text)
+  toast.add({ title: 'Kopiert', icon: 'i-lucide-check', color: 'success' })
 }
 
 const confirmReinstall = ref(false)
@@ -28,6 +41,22 @@ async function reinstall() {
 
 <template>
   <div class="space-y-6 max-w-3xl">
+    <UCard v-if="server?.sftp">
+      <template #header>
+        <p class="font-medium text-highlighted">SFTP-Zugang</p>
+      </template>
+      <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-2 text-sm">
+        <template v-for="row in sftpRows" :key="row.label">
+          <dt class="text-muted">{{ row.label }}</dt>
+          <dd class="font-mono truncate">{{ row.value }}</dd>
+          <UButton icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" :aria-label="`${row.label} kopieren`" @click="copy(row.value)" />
+        </template>
+      </dl>
+      <p class="text-xs text-muted mt-3">
+        Passwort ist dein Panel-Passwort. Du siehst und änderst per SFTP nur, was deine Datei-Rechte erlauben.
+      </p>
+    </UCard>
+
     <UCard v-if="can('startup.read')">
       <template #header>
         <p class="font-medium text-highlighted">Startparameter</p>

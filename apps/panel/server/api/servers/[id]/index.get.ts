@@ -6,11 +6,11 @@ const params = z.object({ id: z.uuid() })
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, params.parse)
-  const { server, permissions, full } = await requireServerPermission(event, id)
+  const { server, permissions, full, actor } = await requireServerPermission(event, id)
   const db = useDb()
 
   const [node, owner, primary, templateRow] = await Promise.all([
-    db.query.nodes.findFirst({ where: eq(schema.nodes.id, server.nodeId), columns: { id: true, name: true, publicHost: true } }),
+    db.query.nodes.findFirst({ where: eq(schema.nodes.id, server.nodeId), columns: { id: true, name: true, publicHost: true, systemInfo: true } }),
     db.query.users.findFirst({ where: eq(schema.users.id, server.ownerId), columns: { id: true, username: true } }),
     server.primaryAllocationId
       ? db.query.allocations.findFirst({ where: eq(schema.allocations.id, server.primaryAllocationId) })
@@ -26,8 +26,14 @@ export default defineEventHandler(async (event) => {
         .map((v) => ({ ...v, value: v.type === 'secret' && !full ? '••••••' : (server.variables[v.env] ?? '') }))
     : []
 
+  const sftpPort = Number((node?.systemInfo as { sftpPort?: number } | null)?.sftpPort ?? 0)
+  const sftp = permissions.has('file.sftp') && node && sftpPort
+    ? { host: node.publicHost, port: sftpPort, username: `${actor.username}.${server.id.slice(0, 8)}` }
+    : null
+
   return {
     id: server.id,
+    sftp,
     name: server.name,
     description: server.description,
     status: server.status,
@@ -38,7 +44,7 @@ export default defineEventHandler(async (event) => {
     image: canReadStartup ? server.image : null,
     startup: canReadStartup ? server.startup : null,
     templateName: templateRow?.name ?? null,
-    node: node ? { ...node, online: isNodeOnline(node.id) } : null,
+    node: node ? { id: node.id, name: node.name, publicHost: node.publicHost, online: isNodeOnline(node.id) } : null,
     owner,
     address: primary && node ? `${node.publicHost}:${primary.port}` : null,
     permissions: [...permissions],

@@ -9,6 +9,7 @@ export interface ServerVariable {
 
 export interface ServerDetail {
   id: string
+  sftp: { host: string; port: number; username: string } | null
   name: string
   description: string | null
   status: string

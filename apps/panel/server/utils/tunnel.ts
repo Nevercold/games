@@ -106,6 +106,8 @@ function readyTunnel(nodeId: string): TunnelConnection {
 export interface StreamHandle {
   id: number
   send: (data: Uint8Array) => void
+  /** Signals end of input (data frame with eof) without closing the stream. */
+  end: () => void
   close: () => void
 }
 
@@ -123,6 +125,10 @@ export function openStream(nodeId: string, kind: string, header: Uint8Array, han
     send(data) {
       if (stream.closed) return
       sendFrame(conn.peer, id, { case: 'streamData', value: { $typeName: 'panel.v1.StreamData', data, eof: false } })
+    },
+    end() {
+      if (stream.closed) return
+      sendFrame(conn.peer, id, { case: 'streamData', value: { $typeName: 'panel.v1.StreamData', data: new Uint8Array(), eof: true } })
     },
     close() {
       if (stream.closed) return
@@ -206,6 +212,36 @@ export function rpc<Req extends DescMessage, Res extends DescMessage>(
       reject(new TunnelError(504, `${method} timed out`))
     }, timeoutMs)
   })
+}
+
+// ---------------------------------------------------------------------------
+// Daemon-opened streams (even ids): daemon → panel RPCs such as sftp.auth
+// ---------------------------------------------------------------------------
+
+type DaemonRpcHandler = (nodeId: string, header: Uint8Array) => Promise<Uint8Array>
+const daemonRpcHandlers = new Map<string, DaemonRpcHandler>()
+
+/** Registers a handler for "rpc:<method>" streams opened by daemons. */
+export function onDaemonRpc(method: string, handler: DaemonRpcHandler) {
+  daemonRpcHandlers.set(`rpc:${method}`, handler)
+}
+
+export async function handleDaemonStreamOpen(conn: TunnelConnection, envelope: Envelope) {
+  if (envelope.payload.case !== 'streamOpen') return
+  const id = envelope.streamId
+  const fail = (code: number, message: string) =>
+    sendFrame(conn.peer, id, { case: 'error', value: { $typeName: 'panel.v1.TunnelError', code, message } })
+  if (id === 0 || id % 2 !== 0) return fail(400, 'daemon streams must use even ids')
+  const handler = daemonRpcHandlers.get(envelope.payload.value.kind)
+  if (!handler) return fail(501, `unsupported kind ${envelope.payload.value.kind}`)
+  try {
+    const data = await handler(conn.nodeId, envelope.payload.value.header)
+    sendFrame(conn.peer, id, { case: 'streamData', value: { $typeName: 'panel.v1.StreamData', data, eof: true } })
+  } catch (err) {
+    if (err instanceof TunnelError) return fail(err.code, err.message)
+    console.error(`[tunnel] daemon rpc ${envelope.payload.value.kind} failed:`, err)
+    fail(500, 'internal error')
+  }
 }
 
 /** Converts tunnel errors into HTTP errors for API handlers. */

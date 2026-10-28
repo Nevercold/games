@@ -31,6 +31,14 @@ type Config struct {
 	ContainerUser string `yaml:"container_user"`
 	// StopTimeoutS is how long a stop may take before the container is killed.
 	StopTimeoutS int `yaml:"stop_timeout_s"`
+	// SFTP configures the built-in SFTP server.
+	SFTP SFTPConfig `yaml:"sftp"`
+}
+
+// SFTPConfig of the built-in server; logins are checked by the panel.
+type SFTPConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Bind    string `yaml:"bind"`
 }
 
 // Load reads and validates the config file at path.
@@ -45,6 +53,7 @@ func Load(path string) (*Config, error) {
 		LogLevel:      "info",
 		ContainerUser: "988:988",
 		StopTimeoutS:  120,
+		SFTP:          SFTPConfig{Enabled: true, Bind: "0.0.0.0:2022"},
 	}
 	if err := yaml.Unmarshal(raw, cfg); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)

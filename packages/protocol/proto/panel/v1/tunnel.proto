@@ -36,6 +36,8 @@ message Hello {
   string daemon_version = 2;
   string hostname = 3;
   SystemInfo system = 4;
+  // 0 when the built-in SFTP server is disabled.
+  uint32 sftp_port = 5;
 }
 
 message SystemInfo {

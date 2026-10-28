@@ -12,6 +12,16 @@ export function clientIp(event: H3Event) {
 // lean-ctx: in-memory limiter, upgrade to a shared store when the panel runs multi-instance
 const attempts = new Map<string, { count: number; resetAt: number }>()
 
+/** Non-throwing variant: records a hit and reports whether the limit is exceeded. */
+export function rateLimited(key: string, max = 10, windowMs = 60_000): boolean {
+  try {
+    assertRateLimit(key, max, windowMs)
+    return false
+  } catch {
+    return true
+  }
+}
+
 /** Simple fixed-window limiter for auth endpoints. */
 export function assertRateLimit(key: string, max = 10, windowMs = 60_000) {
   const now = Date.now()
