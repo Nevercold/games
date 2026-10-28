@@ -31,6 +31,9 @@ type Config struct {
 	ContainerUser string `yaml:"container_user"`
 	// StopTimeoutS is how long a stop may take before the container is killed.
 	StopTimeoutS int `yaml:"stop_timeout_s"`
+	// BackupDir stores archives of "local" backup targets
+	// (default <data_dir>/backups).
+	BackupDir string `yaml:"backup_dir"`
 	// SFTP configures the built-in SFTP server.
 	SFTP SFTPConfig `yaml:"sftp"`
 }

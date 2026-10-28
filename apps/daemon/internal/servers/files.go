@@ -21,6 +21,7 @@ import (
 
 const (
 	maxArchiveEntries      = 100_000
+	maxBackupEntries       = 5_000_000
 	unlimitedExtractBudget = 50 << 30 // 50 GiB cap when the server has no disk limit
 	transferChunk          = 256 << 10
 )
@@ -516,16 +517,21 @@ func (m *Manager) Decompress(id, dir, archive string, limit uint64) error {
 }
 
 type extractor struct {
-	root    *os.Root
-	base    string
-	budget  uint64
-	written uint64
-	entries int
+	root       *os.Root
+	base       string
+	budget     uint64
+	written    uint64
+	entries    int
+	maxEntries int // 0 = maxArchiveEntries
 }
 
 func (e *extractor) entry(name string, info fs.FileInfo, open func() (io.ReadCloser, error)) error {
 	e.entries++
-	if e.entries > maxArchiveEntries {
+	limit := e.maxEntries
+	if limit == 0 {
+		limit = maxArchiveEntries
+	}
+	if e.entries > limit {
 		return tunnel.BadRequest("archive has too many entries")
 	}
 	target := path.Join(e.base, CleanPath(name))

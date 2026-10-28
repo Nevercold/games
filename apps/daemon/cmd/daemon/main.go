@@ -79,6 +79,7 @@ func run() error {
 		ContainerUser: cfg.ContainerUser,
 		StopTimeout:   time.Duration(cfg.StopTimeoutS) * time.Second,
 		Logger:        log,
+		BackupDir:     cfg.BackupDir,
 	})
 	if err != nil {
 		return err
@@ -102,6 +103,7 @@ func run() error {
 
 	all := handlers(mgr)
 	maps.Copy(all, fileHandlers(mgr))
+	maps.Copy(all, backupHandlers(mgr))
 
 	log.Info("starting daemon", "version", version, "panel", tunnelURL)
 	client := tunnel.New(tunnel.Options{

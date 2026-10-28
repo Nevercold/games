@@ -15,6 +15,13 @@
       "when": 1793214293030,
       "tag": "0001_permissions_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793218063026,
+      "tag": "0002_backups",
+      "breakpoints": true
     }
   ]
 }

@@ -48,6 +48,9 @@ type Options struct {
 	ContainerUser string
 	StopTimeout   time.Duration
 	Logger        *slog.Logger
+	// BackupDir is where "local" backup targets store archives
+	// (default <DataDir>/backups).
+	BackupDir string
 }
 
 // Manager owns all servers on this node.
@@ -74,6 +77,11 @@ func NewManager(opts Options) (*Manager, error) {
 		if err := os.MkdirAll(filepath.Join(abs, d), 0o755); err != nil {
 			return nil, fmt.Errorf("create data dir: %w", err)
 		}
+	}
+	if opts.BackupDir == "" {
+		opts.BackupDir = filepath.Join(abs, "backups")
+	} else if opts.BackupDir, err = filepath.Abs(opts.BackupDir); err != nil {
+		return nil, err
 	}
 	if opts.StopTimeout <= 0 {
 		opts.StopTimeout = 2 * time.Minute
@@ -130,6 +138,8 @@ type Server struct {
 	spec          *panelv1.ServerSpec
 	hijack        *types.HijackedResponse
 	stopRequested bool
+	restoring     bool // backup restore in progress, blocks start/install
+	backingUp     bool
 	startedAt     time.Time
 	exited        chan struct{}
 
@@ -177,6 +187,10 @@ func (m *Manager) Start(spec *panelv1.ServerSpec) error {
 		return err
 	}
 	s.mu.Lock()
+	if s.restoring {
+		s.mu.Unlock()
+		return tunnel.Conflict("a backup is being restored")
+	}
 	if s.state != panelv1.ServerState_SERVER_STATE_OFFLINE {
 		st := s.state
 		s.mu.Unlock()
@@ -486,6 +500,10 @@ func (m *Manager) Install(spec *panelv1.ServerSpec, inst *panelv1.InstallSpec) e
 		return err
 	}
 	s.mu.Lock()
+	if s.restoring {
+		s.mu.Unlock()
+		return tunnel.Conflict("a backup is being restored")
+	}
 	if s.state != panelv1.ServerState_SERVER_STATE_OFFLINE {
 		st := s.state
 		s.mu.Unlock()

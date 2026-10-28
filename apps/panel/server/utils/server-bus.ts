@@ -6,6 +6,7 @@
 export type ServerBusMessage =
   | { type: 'status'; status: string; message?: string | null }
   | { type: 'install'; success: boolean }
+  | { type: 'backup'; backupId: string; restore: boolean; success: boolean }
 
 type Listener = (msg: ServerBusMessage) => void
 

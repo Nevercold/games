@@ -44,6 +44,7 @@ const canKill = computed(() => can('control.kill') && ['running', 'starting', 's
 const tabs = computed(() => [
   { label: 'Konsole', icon: 'i-lucide-terminal', to: `/servers/${id}`, exact: true },
   ...(can('file.read') ? [{ label: 'Dateien', icon: 'i-lucide-folder', to: `/servers/${id}/files` }] : []),
+  ...(can('backup.read') ? [{ label: 'Backups', icon: 'i-lucide-archive', to: `/servers/${id}/backups` }] : []),
   ...(can('startup.read') || can('settings.reinstall') || server.value?.sftp ? [{ label: 'Einstellungen', icon: 'i-lucide-settings', to: `/servers/${id}/settings` }] : []),
   ...(can('user.read') ? [{ label: 'Benutzer', icon: 'i-lucide-users', to: `/servers/${id}/users` }] : []),
 ])

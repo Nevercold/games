@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -140,6 +141,10 @@ export const servers = pgTable('servers', {
   /** Last error/info message, e.g. why an install failed. */
   statusMessage: text('status_message'),
   primaryAllocationId: uuid('primary_allocation_id'),
+  /** Max. number of backups kept; the oldest unlocked one rotates out. 0 = backups disabled. */
+  backupLimit: integer('backup_limit').notNull().default(3),
+  /** Backup target; null uses the default target. */
+  backupTargetId: uuid('backup_target_id').references(() => backupTargets.id, { onDelete: 'set null' }),
   ...timestamps,
 })
 
@@ -194,6 +199,58 @@ export const userServerPrefs = pgTable(
     color: text('color'),
   },
   (t) => [primaryKey({ columns: [t.userId, t.serverId] })],
+)
+
+// ---------------------------------------------------------------------------
+// Backups
+// ---------------------------------------------------------------------------
+
+export const backupTargetType = pgEnum('backup_target_type', ['local', 's3', 'sftp'])
+
+export const backupTargets = pgTable('backup_targets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  type: backupTargetType('type').notNull(),
+  /** AES-256-GCM encrypted JSON config incl. credentials (utils/crypto.ts). */
+  config: text('config').notNull(),
+  isDefault: boolean('is_default').notNull().default(false),
+  ...timestamps,
+})
+
+export const backupStatus = pgEnum('backup_status', ['pending', 'completed', 'failed'])
+
+export const backups = pgTable(
+  'backups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    serverId: uuid('server_id')
+      .notNull()
+      .references(() => servers.id, { onDelete: 'cascade' }),
+    targetId: uuid('target_id')
+      .notNull()
+      .references(() => backupTargets.id, { onDelete: 'restrict' }),
+    /** Node that wrote the archive; "local" targets only exist there. */
+    nodeId: uuid('node_id').references(() => nodes.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    /** Object key inside the target. */
+    key: text('key').notNull(),
+    status: backupStatus('status').notNull().default('pending'),
+    sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull().default(0),
+    sha256: text('sha256'),
+    ignore: text('ignore').array().notNull().default(sql`'{}'::text[]`),
+    /** Locked backups are never rotated out or deleted. */
+    locked: boolean('locked').notNull().default(false),
+    restoring: boolean('restoring').notNull().default(false),
+    error: text('error'),
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    index('backups_server_idx').on(t.serverId, t.createdAt),
+    // At most one backup in progress per server.
+    uniqueIndex('backups_one_pending').on(t.serverId).where(sql`status = 'pending'`),
+  ],
 )
 
 // ---------------------------------------------------------------------------

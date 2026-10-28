@@ -70,4 +70,14 @@ pnpm db:studio    # Drizzle Studio
 |---|---|
 | `NUXT_DATABASE_URL` | Postgres-Verbindung |
 | `NUXT_SESSION_PASSWORD` | Session-Verschlüsselung, mindestens 32 Zeichen. In Dev automatisch erzeugt |
+| `NUXT_APP_KEY` | Verschlüsselt gespeicherte Zugangsdaten (Backup-Ziele), mindestens 32 Zeichen. Pflicht in Produktion, darf sich nie ändern. Dev nutzt einen unsicheren Fallback |
 | `NUXT_TRUST_PROXY` | `true` hinter einem Reverse-Proxy, damit X-Forwarded-For für Rate-Limits zählt |
+
+## Backups
+
+Backup-Ziele (lokal, S3-kompatibel, SFTP) werden unter *Admin → Backup-Ziele* angelegt. Der Daemon streamt das Serververzeichnis als tar + zstd direkt zum Ziel, das Panel speichert nur Metadaten und Prüfsumme.
+
+- **Lokal** schreibt nach `backup_dir` der Node (Standard `<data_dir>/backups`). Solche Backups lassen sich nur auf derselben Node wiederherstellen.
+- **SFTP** verlangt einen gepinnten Host-Key. Der Verbindungstest zeigt den Fingerprint, der dann bestätigt wird.
+- Pro Server gilt ein Limit (Standard 3). Neue Backups ersetzen das älteste ungesperrte.
+

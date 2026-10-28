@@ -26,6 +26,20 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Then the backup archives; rows go with the server (cascade).
+  const backups = await db.query.backups.findMany({ where: eq(schema.backups.serverId, id) })
+  const leftovers: string[] = []
+  for (const b of backups) {
+    try {
+      await deleteBackupArchive(b, server)
+    } catch {
+      leftovers.push(b.key)
+    }
+  }
+  if (leftovers.length && !force) {
+    throw createError({ statusCode: 409, statusMessage: `${leftovers.length} Backup-Archiv(e) konnten nicht gelöscht werden; use force to delete anyway` })
+  }
+
   // Allocations are released via ON DELETE SET NULL.
   await db.delete(schema.servers).where(eq(schema.servers.id, id))
   await usePanelHooks().callHook('server.deleted', { serverId: id })

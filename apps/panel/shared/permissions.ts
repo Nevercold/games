@@ -57,6 +57,7 @@ export const ADMIN_PERMISSION_GROUPS = [
     label: 'System',
     permissions: [
       { id: 'admin.settings.write', label: 'Branding und Einstellungen ändern' },
+      { id: 'admin.backups.write', label: 'Backup-Ziele verwalten', description: 'Inklusive Zugangsdaten für S3 und SFTP' },
       { id: 'admin.plugins.read', label: 'Plugins sehen' },
     ],
   },
@@ -94,6 +95,17 @@ export const SERVER_PERMISSION_GROUPS = [
     permissions: [
       { id: 'startup.read', label: 'Variablen ansehen' },
       { id: 'startup.update', label: 'Variablen ändern' },
+    ],
+  },
+  {
+    id: 'backup',
+    label: 'Backups',
+    permissions: [
+      { id: 'backup.read', label: 'Backups ansehen' },
+      { id: 'backup.create', label: 'Backups erstellen' },
+      { id: 'backup.restore', label: 'Backups wiederherstellen', description: 'Überschreibt Serverdateien' },
+      { id: 'backup.download', label: 'Backups herunterladen' },
+      { id: 'backup.delete', label: 'Backups löschen und sperren' },
     ],
   },
   {

@@ -17,6 +17,8 @@ const bodySchema = z.object({
   memoryMb: z.number().int().min(64),
   diskMb: z.number().int().min(128),
   cpuPercent: z.number().int().min(0).max(10_000),
+  /** Number of backups kept (0 disables backups). */
+  backupLimit: z.number().int().min(0).max(1000).default(3),
   /** Run the template's install script right away (needs the node online). */
   install: z.boolean().default(true),
 })

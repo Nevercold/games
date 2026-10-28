@@ -11,6 +11,7 @@ const ADMIN_ROUTES: [prefix: string, perm: AdminPermission][] = [
   ['/admin/roles', 'admin.users.read'],
   ['/admin/plugins', 'admin.plugins.read'],
   ['/admin/branding', 'admin.settings.write'],
+  ['/admin/backups', 'admin.backups.write'],
 ]
 
 export default defineNuxtRouteMiddleware(async (to) => {

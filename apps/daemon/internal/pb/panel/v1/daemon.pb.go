@@ -1600,6 +1600,7 @@ type Event struct {
 	//
 	//	*Event_StateChanged
 	//	*Event_InstallFinished
+	//	*Event_BackupFinished
 	Kind          isEvent_Kind `protobuf_oneof:"kind"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1660,6 +1661,15 @@ func (x *Event) GetInstallFinished() *InstallFinished {
 	return nil
 }
 
+func (x *Event) GetBackupFinished() *BackupFinished {
+	if x != nil {
+		if x, ok := x.Kind.(*Event_BackupFinished); ok {
+			return x.BackupFinished
+		}
+	}
+	return nil
+}
+
 type isEvent_Kind interface {
 	isEvent_Kind()
 }
@@ -1672,9 +1682,15 @@ type Event_InstallFinished struct {
 	InstallFinished *InstallFinished `protobuf:"bytes,2,opt,name=install_finished,json=installFinished,proto3,oneof"`
 }
 
+type Event_BackupFinished struct {
+	BackupFinished *BackupFinished `protobuf:"bytes,3,opt,name=backup_finished,json=backupFinished,proto3,oneof"`
+}
+
 func (*Event_StateChanged) isEvent_Kind() {}
 
 func (*Event_InstallFinished) isEvent_Kind() {}
+
+func (*Event_BackupFinished) isEvent_Kind() {}
 
 type ServerStateChanged struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -1801,7 +1817,7 @@ var File_panel_v1_daemon_proto protoreflect.FileDescriptor
 
 const file_panel_v1_daemon_proto_rawDesc = "" +
 	"\n" +
-	"\x15panel/v1/daemon.proto\x12\bpanel.v1\"\xb0\x03\n" +
+	"\x15panel/v1/daemon.proto\x12\bpanel.v1\x1a\x16panel/v1/backups.proto\"\xb0\x03\n" +
 	"\n" +
 	"ServerSpec\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -1929,10 +1945,11 @@ const file_panel_v1_daemon_proto_rawDesc = "" +
 	"\n" +
 	"disk_bytes\x18\x06 \x01(\x04R\tdiskBytes\x12\x1b\n" +
 	"\tuptime_ms\x18\a \x01(\x03R\buptimeMs\x12+\n" +
-	"\x05state\x18\b \x01(\x0e2\x15.panel.v1.ServerStateR\x05state\"\x9c\x01\n" +
+	"\x05state\x18\b \x01(\x0e2\x15.panel.v1.ServerStateR\x05state\"\xe1\x01\n" +
 	"\x05Event\x12C\n" +
 	"\rstate_changed\x18\x01 \x01(\v2\x1c.panel.v1.ServerStateChangedH\x00R\fstateChanged\x12F\n" +
-	"\x10install_finished\x18\x02 \x01(\v2\x19.panel.v1.InstallFinishedH\x00R\x0finstallFinishedB\x06\n" +
+	"\x10install_finished\x18\x02 \x01(\v2\x19.panel.v1.InstallFinishedH\x00R\x0finstallFinished\x12C\n" +
+	"\x0fbackup_finished\x18\x03 \x01(\v2\x18.panel.v1.BackupFinishedH\x00R\x0ebackupFinishedB\x06\n" +
 	"\x04kind\"x\n" +
 	"\x12ServerStateChanged\x12\x1b\n" +
 	"\tserver_id\x18\x01 \x01(\tR\bserverId\x12+\n" +
@@ -2004,6 +2021,7 @@ var file_panel_v1_daemon_proto_goTypes = []any{
 	nil,                            // 30: panel.v1.ConfigFile.SetEntry
 	nil,                            // 31: panel.v1.ServerStatesResponse.StatesEntry
 	nil,                            // 32: panel.v1.DockerContainer.LabelsEntry
+	(*BackupFinished)(nil),         // 33: panel.v1.BackupFinished
 }
 var file_panel_v1_daemon_proto_depIdxs = []int32{
 	29, // 0: panel.v1.ServerSpec.env:type_name -> panel.v1.ServerSpec.EnvEntry
@@ -2024,13 +2042,14 @@ var file_panel_v1_daemon_proto_depIdxs = []int32{
 	0,  // 15: panel.v1.StatsSample.state:type_name -> panel.v1.ServerState
 	27, // 16: panel.v1.Event.state_changed:type_name -> panel.v1.ServerStateChanged
 	28, // 17: panel.v1.Event.install_finished:type_name -> panel.v1.InstallFinished
-	0,  // 18: panel.v1.ServerStateChanged.state:type_name -> panel.v1.ServerState
-	0,  // 19: panel.v1.ServerStatesResponse.StatesEntry.value:type_name -> panel.v1.ServerState
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	33, // 18: panel.v1.Event.backup_finished:type_name -> panel.v1.BackupFinished
+	0,  // 19: panel.v1.ServerStateChanged.state:type_name -> panel.v1.ServerState
+	0,  // 20: panel.v1.ServerStatesResponse.StatesEntry.value:type_name -> panel.v1.ServerState
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_panel_v1_daemon_proto_init() }
@@ -2038,6 +2057,7 @@ func file_panel_v1_daemon_proto_init() {
 	if File_panel_v1_daemon_proto != nil {
 		return
 	}
+	file_panel_v1_backups_proto_init()
 	file_panel_v1_daemon_proto_msgTypes[2].OneofWrappers = []any{
 		(*StopConfig_Command)(nil),
 		(*StopConfig_Signal)(nil),
@@ -2045,6 +2065,7 @@ func file_panel_v1_daemon_proto_init() {
 	file_panel_v1_daemon_proto_msgTypes[24].OneofWrappers = []any{
 		(*Event_StateChanged)(nil),
 		(*Event_InstallFinished)(nil),
+		(*Event_BackupFinished)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

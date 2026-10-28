@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package panel.v1;
 
+import "panel/v1/backups.proto";
+
 option go_package = "panel/daemon/internal/pb/panel/v1;panelv1";
 
 // Messages carried inside tunnel streams.
@@ -203,6 +205,7 @@ message Event {
   oneof kind {
     ServerStateChanged state_changed = 1;
     InstallFinished install_finished = 2;
+    BackupFinished backup_finished = 3;
   }
 }
 

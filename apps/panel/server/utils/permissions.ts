@@ -97,7 +97,7 @@ export async function getServerAccess(actor: Actor, serverId: string): Promise<S
   }
   if (actor.adminPermissions.has('admin.servers.read')) {
     // Read-only admins may look but not touch.
-    return { server, permissions: new Set(['control.console', 'startup.read', 'user.read', 'file.read']), full: false }
+    return { server, permissions: new Set(['control.console', 'startup.read', 'user.read', 'file.read', 'backup.read']), full: false }
   }
   return null
 }

@@ -16,6 +16,7 @@ const ADMIN_ITEMS: (NavigationMenuItem & { perm: AdminPermission })[] = [
   { label: 'Templates', icon: 'i-lucide-package', to: '/admin/templates', perm: 'admin.templates.read' },
   { label: 'Benutzer', icon: 'i-lucide-users', to: '/admin/users', perm: 'admin.users.read' },
   { label: 'Rollen', icon: 'i-lucide-shield', to: '/admin/roles', perm: 'admin.users.read' },
+  { label: 'Backup-Ziele', icon: 'i-lucide-hard-drive-upload', to: '/admin/backups', perm: 'admin.backups.write' },
   { label: 'Plugins', icon: 'i-lucide-puzzle', to: '/admin/plugins', perm: 'admin.plugins.read' },
   { label: 'Branding', icon: 'i-lucide-palette', to: '/admin/branding', perm: 'admin.settings.write' },
 ]

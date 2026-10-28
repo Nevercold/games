@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package panel.v1;
+
+option go_package = "panel/daemon/internal/pb/panel/v1;panelv1";
+
+// Backups are a zstd-compressed tar of the server directory, streamed by the
+// daemon straight to the target. The panel keeps the backup records and the
+// encrypted target credentials; it hands the decrypted target to the daemon
+// only for the duration of one call.
+
+message BackupTarget {
+  // local | s3 | sftp
+  string type = 1;
+  // JSON object, schema depends on type (see the daemon's backup package).
+  bytes config = 2;
+}
+
+// rpc:backup.create – accepted asynchronously, BackupFinished follows.
+message BackupCreateRequest {
+  string server_id = 1;
+  string backup_id = 2;
+  BackupTarget target = 3;
+  // Object key relative to the target root, e.g. "<server>/<backup>.tar.zst".
+  string key = 4;
+  // Gitignore-like patterns (relative to the server root) to skip.
+  repeated string ignore = 5;
+}
+
+message BackupCreateResponse {}
+
+// rpc:backup.restore – accepted asynchronously, BackupFinished follows.
+message BackupRestoreRequest {
+  string server_id = 1;
+  string backup_id = 2;
+  BackupTarget target = 3;
+  string key = 4;
+  // Delete all server files before extracting.
+  bool truncate = 5;
+  uint64 disk_limit_bytes = 6;
+  // Expected sha256 (hex) of the archive; empty skips the check.
+  string sha256 = 7;
+}
+
+message BackupRestoreResponse {}
+
+// rpc:backup.delete
+message BackupDeleteRequest {
+  BackupTarget target = 1;
+  string key = 2;
+}
+
+message BackupDeleteResponse {}
+
+// rpc:backup.test – checks that the target is reachable and writable.
+message BackupTestRequest {
+  BackupTarget target = 1;
+}
+
+message BackupTestResponse {
+  // SFTP only: the host key the server presented (SHA256:...).
+  string host_key_fingerprint = 1;
+}
+
+// Stream kind "backup.download", header BackupDownloadOpen. The daemon sends
+// the raw archive and ends with eof.
+message BackupDownloadOpen {
+  BackupTarget target = 1;
+  string key = 2;
+}
+
+// Event pushed when a create or restore finished.
+message BackupFinished {
+  string server_id = 1;
+  string backup_id = 2;
+  bool restore = 3;
+  bool success = 4;
+  string error = 5;
+  uint64 size_bytes = 6;
+  string sha256 = 7;
+}

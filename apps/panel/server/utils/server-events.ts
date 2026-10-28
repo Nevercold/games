@@ -1,5 +1,6 @@
 import { ServerState, ServerStatesRequestSchema, ServerStatesResponseSchema, type Event } from '@panel/protocol'
 import { and, eq, inArray, ne } from 'drizzle-orm'
+import { z } from 'zod'
 
 type DbStatus = (typeof schema.serverStatus.enumValues)[number]
 
@@ -68,6 +69,37 @@ export async function handleDaemonEvent(nodeId: string, event: Event) {
       const message = success ? null : `Installation fehlgeschlagen:\n${logTail.slice(-2000)}`
       await setStatus(nodeId, serverId, success ? 'offline' : 'install_failed', message)
       publishServer(serverId, { type: 'install', success })
+      break
+    }
+    case 'backupFinished': {
+      const v = event.kind.value
+      if (!z.uuid().safeParse(v.backupId).success) return
+      const db = useDb()
+      // Only the node hosting the server may report on its backups.
+      const server = await db.query.servers.findFirst({
+        where: and(eq(schema.servers.id, v.serverId), eq(schema.servers.nodeId, nodeId)),
+        columns: { id: true },
+      })
+      if (!server) return
+      const where = and(eq(schema.backups.id, v.backupId), eq(schema.backups.serverId, v.serverId))
+      if (v.restore) {
+        await db.update(schema.backups).set({ restoring: false }).where(where)
+      } else {
+        await db
+          .update(schema.backups)
+          .set(
+            v.success
+              ? { status: 'completed', sizeBytes: Number(v.sizeBytes), sha256: v.sha256, error: null, completedAt: new Date() }
+              : { status: 'failed', error: v.error.slice(0, 2000) || 'unbekannter Fehler', completedAt: new Date() },
+          )
+          .where(and(where, eq(schema.backups.status, 'pending')))
+      }
+      publishServer(v.serverId, { type: 'backup', backupId: v.backupId, restore: v.restore, success: v.success })
+      await usePanelHooks().callHook(v.restore ? 'backup.restored' : 'backup.finished', {
+        serverId: v.serverId,
+        backupId: v.backupId,
+        success: v.success,
+      })
       break
     }
   }
