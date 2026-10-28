@@ -22,6 +22,36 @@ async function copy(text: string) {
   toast.add({ title: 'Kopiert', icon: 'i-lucide-check', color: 'success' })
 }
 
+// --- startup variables ---------------------------------------------------------
+const initial = () => ({
+  image: server.value?.image ?? '',
+  variables: Object.fromEntries((server.value?.variables ?? []).map((v) => [v.env, v.value])),
+})
+const form = reactive(initial())
+const snapshot = ref(JSON.stringify(initial()))
+const startupDirty = computed(() => JSON.stringify(form) !== snapshot.value)
+const fieldErrors = ref<Record<string, string>>({})
+const savingStartup = ref(false)
+
+async function saveStartup() {
+  savingStartup.value = true
+  fieldErrors.value = {}
+  try {
+    const res = await $fetch<{ restartRequired: boolean }>(`/api/servers/${id}/startup`, { method: 'PUT', body: form })
+    snapshot.value = JSON.stringify(form)
+    toast.add({
+      title: 'Startparameter gespeichert',
+      description: res.restartRequired ? 'Die Änderungen gelten nach dem nächsten Neustart.' : undefined,
+      color: 'success',
+    })
+  } catch (err: any) {
+    fieldErrors.value = err?.data?.data?.errors ?? {}
+    toast.add({ title: 'Nicht gespeichert', description: errorMessage(err), color: 'error' })
+  } finally {
+    savingStartup.value = false
+  }
+}
+
 const confirmReinstall = ref(false)
 const reinstalling = ref(false)
 async function reinstall() {
@@ -61,20 +91,49 @@ async function reinstall() {
       <template #header>
         <p class="font-medium text-highlighted">Startparameter</p>
       </template>
-      <div class="space-y-4">
-        <UFormField v-if="server?.image" label="Docker-Image">
-          <UInput :model-value="server.image" readonly class="w-full font-mono" />
+      <form class="space-y-4" @submit.prevent="saveStartup">
+        <UFormField label="Docker-Image">
+          <USelect
+            v-if="server?.images.length && can('startup.update')"
+            v-model="form.image"
+            :items="server.images"
+            class="w-full"
+          />
+          <UInput v-else :model-value="server?.image ?? ''" readonly class="w-full font-mono" />
         </UFormField>
         <UFormField v-if="server?.startup" label="Startbefehl">
           <UTextarea :model-value="server.startup" readonly autoresize class="w-full font-mono" />
         </UFormField>
         <div v-if="server?.variables.length" class="grid gap-4 sm:grid-cols-2">
-          <UFormField v-for="v in server.variables" :key="v.env" :label="v.name" :help="v.description" :hint="v.env">
-            <UInput :model-value="v.value" readonly class="w-full font-mono" />
+          <UFormField
+            v-for="v in server.variables"
+            :key="v.env"
+            :label="v.name"
+            :help="v.description"
+            :hint="v.env"
+            :error="fieldErrors[v.env]"
+          >
+            <USelect v-if="v.type === 'enum'" v-model="form.variables[v.env]" :items="v.options ?? []" :disabled="!v.editable" class="w-full" />
+            <USwitch
+              v-else-if="v.type === 'bool'"
+              :model-value="form.variables[v.env] === '1' || form.variables[v.env] === 'true'"
+              :disabled="!v.editable"
+              @update:model-value="(b: boolean) => (form.variables[v.env] = b ? '1' : '0')"
+            />
+            <UInput
+              v-else
+              v-model="form.variables[v.env]"
+              :type="v.type === 'secret' ? 'password' : 'text'"
+              :readonly="!v.editable"
+              class="w-full font-mono"
+            />
           </UFormField>
         </div>
-        <p class="text-xs text-muted">Variablen bearbeiten folgt in einer späteren Phase.</p>
-      </div>
+        <div v-if="can('startup.update')" class="flex items-center justify-end gap-3">
+          <span v-if="startupDirty" class="text-xs text-muted">Ungespeicherte Änderungen</span>
+          <UButton type="submit" label="Speichern" :loading="savingStartup" :disabled="!startupDirty" />
+        </div>
+      </form>
     </UCard>
 
     <UCard v-if="can('settings.reinstall')">

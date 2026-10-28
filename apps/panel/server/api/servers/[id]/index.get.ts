@@ -20,10 +20,18 @@ export default defineEventHandler(async (event) => {
 
   const template = templateRow ? templateSchema.safeParse(templateRow.definition) : null
   const canReadStartup = permissions.has('startup.read')
+  const adminEdit = actor.adminPermissions.has('admin.servers.write')
   const variables = canReadStartup && template?.success
     ? template.data.variables
-        .filter((v) => full || v.user_viewable)
-        .map((v) => ({ ...v, value: v.type === 'secret' && !full ? '••••••' : (server.variables[v.env] ?? '') }))
+        .filter((v) => adminEdit || v.user_viewable)
+        .map((v) => ({
+          ...v,
+          value: v.type === 'secret' && !full ? SECRET_MASK : (server.variables[v.env] ?? ''),
+          editable: permissions.has('startup.update') && (adminEdit || v.user_editable),
+        }))
+    : []
+  const images = canReadStartup && template?.success
+    ? Object.entries(template.data.images).map(([label, value]) => ({ label, value }))
     : []
 
   const sftpPort = Number((node?.systemInfo as { sftpPort?: number } | null)?.sftpPort ?? 0)
@@ -43,6 +51,7 @@ export default defineEventHandler(async (event) => {
     cpuPercent: server.cpuPercent,
     image: canReadStartup ? server.image : null,
     startup: canReadStartup ? server.startup : null,
+    images,
     templateName: templateRow?.name ?? null,
     node: node ? { id: node.id, name: node.name, publicHost: node.publicHost, online: isNodeOnline(node.id) } : null,
     owner,

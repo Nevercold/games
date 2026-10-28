@@ -5,6 +5,8 @@ export interface ServerVariable {
   type: string
   value: string
   user_editable: boolean
+  editable: boolean
+  options?: string[]
 }
 
 export interface ServerDetail {
@@ -19,6 +21,7 @@ export interface ServerDetail {
   cpuPercent: number
   image: string | null
   startup: string | null
+  images: { label: string; value: string }[]
   templateName: string | null
   node: { id: string; name: string; publicHost: string; online: boolean } | null
   owner: { id: string; username: string } | undefined
